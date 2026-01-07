@@ -56,42 +56,148 @@ async function run() {
     const reviewsCollection = db.collection("reviews");
   
      // get all scholarships
-      app.get('/scholarships', async (req, res) => {
+//       app.get('/scholarships', async (req, res) => {
+//   try {
+//     const scholarships = await scholarshipsCollection.find({}).sort({ scholarshipPostDate: -1 }).toArray();
+//     console.log(scholarships);
+//     res.send({ success: true, data: scholarships });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).send({ success: false, message: 'Error fetching scholarships' });
+//   }
+// });
+
+
+//       // GET Top 6 Scholarships (Smart Sorting)
+// app.get('/top/scholarships', async (req, res) => {
+//   try {
+//     const sortBy = req.query.sortBy || 'applicationFees';
+//     let sortCriteria = {};
+//     if (sortBy === 'applicationFees') {
+//       sortCriteria = { applicationFees: 1, scholarshipPostDate: -1 };
+
+//     } else if (sortBy === 'recent') {
+//       sortCriteria = { scholarshipPostDate: -1, applicationFees: 1 };
+//     }
+//     const topScholarships = await scholarshipsCollection
+//       .find({})
+//       .sort(sortCriteria)
+//       .limit(6)
+//       .toArray();
+//     res.send({ success: true, data: topScholarships });
+//    // console.log(topScholarships);
+//   } catch (err) {
+//    // console.error(err);
+//     res.status(500).send({ success: false, message: 'Error fetching top scholarships' });
+//   }
+// });
+       // এটা server.js ফাইলের নিচের দিকে যেকোনো জায়গায় যোগ করুন:
+
+// রুট ১: সব স্কলারশিপ পাবার জন্য (search & filter সহ)
+app.get('/scholarships', async (req, res) => {
   try {
-    const scholarships = await scholarshipsCollection.find({}).sort({ scholarshipPostDate: -1 }).toArray();
-    console.log(scholarships);
-    res.send({ success: true, data: scholarships });
+    const { search, category, subject, country, degree } = req.query;
+    
+    console.log('Query received:', { search, category, subject, country, degree });
+    
+    let query = {};
+    
+    // সার্চ ফাংশনালিটি
+    if (search && search.trim() !== '') {
+      query.$or = [
+        { scholarshipName: { $regex: search, $options: 'i' } },
+        { universityName: { $regex: search, $options: 'i' } },
+        { degree: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // ফিল্টার বাই Scholarship Category
+    if (category && category !== 'all') {
+      query.scholarshipCategory = category;
+    }
+    
+    // ফিল্টার বাই Subject Category
+    if (subject && subject !== 'all') {
+      query.subjectCategory = subject;
+    }
+    
+    // ফিল্টার বাই Location (Country)
+    if (country && country !== 'all') {
+      query.universityCountry = country;
+    }
+    
+    // ফিল্টার বাই Degree
+    if (degree && degree !== 'all') {
+      query.degree = degree;
+    }
+    
+    const scholarships = await scholarshipsCollection
+      .find(query)
+      .sort({ applicationFees: 1, scholarshipPostDate: -1 })
+      .toArray();
+    
+    res.send({ 
+      success: true, 
+      data: scholarships 
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).send({ success: false, message: 'Error fetching scholarships' });
+    res.status(500).send({ 
+      success: false, 
+      message: 'Error fetching scholarships' 
+    });
   }
 });
 
+// রুট ২: ফিল্টার অপশন পাবার জন্য
+app.get('/api/scholarships/filters', async (req, res) => {
+  try {
+    const categories = await scholarshipsCollection.distinct('scholarshipCategory');
+    const subjects = await scholarshipsCollection.distinct('subjectCategory');
+    const countries = await scholarshipsCollection.distinct('universityCountry');
+    const degrees = await scholarshipsCollection.distinct('degree');
+    
+    const filters = {
+      categories: categories.filter(c => c && c.trim() !== '').sort(),
+      subjects: subjects.filter(s => s && s.trim() !== '').sort(),
+      countries: countries.filter(c => c && c.trim() !== '').sort(),
+      degrees: degrees.filter(d => d && d.trim() !== '').sort()
+    };
+    
+    res.send({ 
+      success: true, 
+      data: filters 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ 
+      success: false, 
+      message: 'Error fetching filter options' 
+    });
+  }
+});
 
-      // GET Top 6 Scholarships (Smart Sorting)
+// রুট ৩: Top Scholarships পাবার জন্য (আগে থেকেই আছে, চেক করুন)
 app.get('/top/scholarships', async (req, res) => {
   try {
-    const sortBy = req.query.sortBy || 'applicationFees';
-    let sortCriteria = {};
-    if (sortBy === 'applicationFees') {
-      sortCriteria = { applicationFees: 1, scholarshipPostDate: -1 };
-
-    } else if (sortBy === 'recent') {
-      sortCriteria = { scholarshipPostDate: -1, applicationFees: 1 };
-    }
     const topScholarships = await scholarshipsCollection
       .find({})
-      .sort(sortCriteria)
+      .sort({ applicationFees: 1, scholarshipPostDate: -1 })
       .limit(6)
       .toArray();
-    res.send({ success: true, data: topScholarships });
-   // console.log(topScholarships);
+    
+    res.send({ 
+      success: true, 
+      data: topScholarships 
+    });
   } catch (err) {
-   // console.error(err);
-    res.status(500).send({ success: false, message: 'Error fetching top scholarships' });
+    console.error(err);
+    res.status(500).send({ 
+      success: false, 
+      message: 'Error fetching top scholarships' 
+    });
   }
 });
-   
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

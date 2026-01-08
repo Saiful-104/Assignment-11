@@ -1,12 +1,13 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId  } = require("mongodb");
 const admin = require("firebase-admin");
 const port = process.env.PORT || 3000;
 const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString(
   "utf-8"
 );
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const serviceAccount = JSON.parse(decoded);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -198,6 +199,155 @@ app.get('/top/scholarships', async (req, res) => {
     });
   }
 });
+
+//post reviews
+ app.post ('/reviews', async (req, res) => {
+        try{
+          const review = req.body;
+          review.scholarshipId= new ObjectId(review.scholarshipId)
+           review.reviewDate = new Date()
+           const result = await reviewsCollection.insertOne(review)
+            res.send({
+               success:true,
+               data:result,
+            })
+            
+        }
+        catch(err){
+             //console.error('REVIEW ERROR 👉', err);  
+  res.status(500).send({
+    success: false,
+    error: err.message,
+  });
+        }
+ });
+  
+ // get reviews by scholarship id
+
+ app.get('/reviews/:scholarshipId',async (req,res)=>{
+   
+       try{
+        const reviews = await reviewsCollection
+     .find({ scholarshipId: new ObjectId(req.params.scholarshipId) })
+     .sort({reviewDate:-1}).toArray()
+      res.send({
+        success:true,
+        data:reviews,
+      })
+       }
+       catch(err){
+          console.error('REVIEW ERROR 👉', err);   
+  res.status(500).send({
+    success: false,
+    error: err.message,
+  });
+       }
+ })
+  
+ // get single scholarship
+    app.get("/scholarships/:id", async (req, res) => {
+      const id = req.params.id;
+      const scholarship = await scholarshipsCollection.findOne({ _id: new ObjectId(id) });
+      res.send({ success: true, data: scholarship });
+    });
+
+    //payment endpoint 
+   app.post('/create-checkout-session', async (req, res) => {
+  try {
+    const paymentInfo = req.body;
+
+    const amount = Number(paymentInfo.applicationFees) || 0;
+
+    // If amount is 0, Stripe cannot process. Return a special response
+    if (amount === 0) {
+      return res.status(400).send({ message: "Application fee is 0, no payment required" });
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: paymentInfo.scholarshipName,
+              description: `Application Fee for ${paymentInfo.degree} at ${paymentInfo.universityName}`,
+            },
+            unit_amount: Math.round(amount * 100), // always integer
+          },
+          quantity: 1,
+        }
+      ],
+      mode: 'payment',
+      customer_email: paymentInfo.customer.email,
+      metadata: {
+        scholarshipId: paymentInfo.scholarshipId,
+        userId: paymentInfo.customer.id || "",
+        userName: paymentInfo.customer.name,
+        userEmail: paymentInfo.customer.email,
+      },
+      success_url: `${process.env.CLIENT_DOMAIN}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.CLIENT_DOMAIN}/scholarship/${paymentInfo.scholarshipId}`,
+    });
+
+    res.send({ url: session.url });
+
+  } catch (err) {
+    console.error("Stripe Checkout Error:", err);
+    res.status(500).send({ message: "Failed to create checkout session" });
+  }
+});
+
+    app.post("/payment-success", async (req, res) => {
+  const { sessionId } = req.body;
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status === "paid") {
+      const scholarship = await scholarshipsCollection.findOne({
+        _id: new ObjectId(session.metadata.scholarshipId),
+      });
+
+      const applicationsCollection = client.db("scholarshipDB").collection("applications");
+
+      // Prevent duplicate applications
+      const existingApp = await applicationsCollection.findOne({
+        scholarshipId: new ObjectId(session.metadata.scholarshipId),
+        userEmail: session.metadata.userEmail,
+      });
+
+      if (!existingApp) {
+        const application = {
+          scholarshipId: new ObjectId(session.metadata.scholarshipId),
+          userId: session.metadata.userId,
+          userName: session.metadata.userName,
+          userEmail: session.metadata.userEmail,
+          universityName: scholarship.universityName,
+          scholarshipCategory: scholarship.scholarshipCategory,
+          degree: scholarship.degree,
+          applicationFees: scholarship.applicationFees,
+          serviceCharge: scholarship.serviceCharge || 0,
+          applicationStatus: "pending",
+          paymentStatus: "paid",
+          applicationDate: new Date(),
+          feedback: "",
+        };
+
+        await applicationsCollection.insertOne(application);
+      }
+
+      return res.send({ success: true, message: "Payment successful and application saved!" });
+    } else {
+      res.status(400).send({ success: false, message: "Payment not completed" });
+    }
+  } catch (err) {
+    console.error("Payment Success Error:", err);
+    res.status(500).send({ success: false, message: "Error saving application" });
+  }
+});
+
+     
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

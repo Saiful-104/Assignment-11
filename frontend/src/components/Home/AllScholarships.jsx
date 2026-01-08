@@ -22,7 +22,7 @@ const AllScholarships = () => {
   const { data: allScholarships = [], isLoading } = useQuery({
     queryKey: ['all-scholarships'],
     queryFn: async () => {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/scholarships`);
+      const res = await axios(`${import.meta.env.VITE_API_URL}/scholarships`);
       return res.data.data;
     },
   });
@@ -32,7 +32,7 @@ const AllScholarships = () => {
     queryKey: ['filter-options'],
     queryFn: async () => {
       try {
-        const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/scholarships/filters`);
+        const res = await axios(`${import.meta.env.VITE_API_URL}/api/scholarships/filters`);
         return res.data.data;
       } catch (error) {
         console.log('Filter API not available, using client-side filtering only');
@@ -99,7 +99,7 @@ const AllScholarships = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.8 }}
-      className="min-h-screen py-12 md:py-20 bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900"
+      className="min-h-screen py-12 md:py-20 bg-gradient-to-br from-gray-50 via-white to-blue-50"
     >
       <Container>
         <motion.div 
@@ -111,10 +111,10 @@ const AllScholarships = () => {
           <div className="inline-flex items-center justify-center p-3 mb-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-lime-500 shadow-lg">
             <Award className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white mb-6 tracking-tight">
+          <h1 className="text-5xl md:text-7xl font-black">
             All <span className="bg-gradient-to-r from-emerald-500 to-lime-500 bg-clip-text text-transparent">Scholarships</span>
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-700  mt-4 max-w-3xl mx-auto">
             Browse all available scholarships — full fund, partial, international, and more.
           </p>
         </motion.div>
@@ -127,11 +127,11 @@ const AllScholarships = () => {
           className="mb-12 space-y-6"
         >
           <div className="relative">
-            <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white" />
             <input
               type="text"
               placeholder="Search scholarships, universities, or degrees..."
-              className="w-full pl-14 pr-6 py-4 text-lg rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400 shadow-lg"
+              className="w-full pl-14 pr-6 py-4 text-lg rounded-2xl border-2 border-gray-200 dark:border-gray-700 bg-white text-white dark:bg-gray-800 focus:outline-none focus:border-emerald-500 dark:focus:border-emerald-400 shadow-lg"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -141,10 +141,10 @@ const AllScholarships = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-emerald-500 transition-colors"
+                className="flex text-white items-center gap-2 px-5 py-3 rounded-xl bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 hover:border-emerald-500 transition-colors"
               >
                 <Filter className="w-5 h-5" />
-                <span className="font-semibold">Filters</span>
+                <span className=" text-white font-semibold">Filters</span>
                 <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
               </button>
 
@@ -178,7 +178,7 @@ const AllScholarships = () => {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-white dark:bg-gray-800 rounded-2xl border-2 border-gray-200 dark:border-gray-700 p-6">
+                <div className="bg-white  dark:bg-gray-800 rounded-2xl border-2 border-gray-200 dark:border-gray-700 p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {/* Scholarship Category Filter */}
                     <div>

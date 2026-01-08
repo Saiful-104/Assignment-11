@@ -16,6 +16,10 @@ import MyOrders from '../pages/Dashboard/Customer/MyOrders'
 //import allScholarships from '../components.Home/allScholarships.jsx'
 import AllScholarships from '../components/Home/AllScholarships'
 import { createBrowserRouter } from 'react-router'
+import ScholarshipDetails from '../pages/PlantDetails/ScholarshipDetails'
+import PaymentCheckout from '../Payment/PaymentCheckout'
+import PaymentSuccess from '../Payment/PaymentSuccess'
+import PaymentCancel from '../Payment/PaymentCancel'
 
 export const router = createBrowserRouter([
   {
@@ -30,6 +34,22 @@ export const router = createBrowserRouter([
       {
         path: '/scholarships',
         element: <AllScholarships />,
+      },
+      {
+       path: '/scholarship/:id',
+       element: <ScholarshipDetails />,
+      },
+      {
+         path:'/payment/checkout/:id',
+         element: <PaymentCheckout />,
+      },
+      {
+       path: '/payment-success',
+       element: <PaymentSuccess/>,
+      },
+      {
+          path: '/payment-cancel',
+          element: <PaymentCancel/>,
       },
       {
         path: '/plant/:id',

@@ -55,7 +55,7 @@ async function run() {
     const db = client.db("scholarshipDB");
     const scholarshipsCollection = db.collection("scholarships");
     const reviewsCollection = db.collection("reviews");
-  
+    const usersCollection = db.collection("users");
      // get all scholarships
 //       app.get('/scholarships', async (req, res) => {
 //   try {
@@ -346,6 +346,43 @@ app.get('/top/scholarships', async (req, res) => {
     res.status(500).send({ success: false, message: "Error saving application" });
   }
 });
+
+ 
+ //save or uodate a user data
+ app.post('/users',async (req,res)=>{
+   try{
+     const userData = req.body;
+     userData.createdAt = new Date().toISOString();
+     userData.last_loggedIn= new Date().toISOString();
+     userData.role='student'
+     const query={
+      email:userData.email,
+     }
+     const alreadyExists =await usersCollection.findOne(query);
+      console.log('ALREADY EXISTS USER 👉', !!alreadyExists);
+      if(alreadyExists){
+         console.log ('Update user info .....')
+           const result = await usersCollection.updateOne(query,{
+             $set:{
+               last_loggedIn: new Date().toISOString(),
+
+             },
+
+           })
+           return res.send(result)
+      }
+      //console.log(userData)
+      console.log ('Create new user .....')
+       const result = await usersCollection.insertOne(userData)
+       res.send(result);
+
+   }
+    catch(err){
+      console.error('USER SAVE/UPDATE ERROR 👉', err);
+    }
+ })
+
+
 
      
 

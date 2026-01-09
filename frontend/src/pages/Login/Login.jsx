@@ -1,9 +1,11 @@
+import { useForm } from "react-hook-form";
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '../../components/Shared/LoadingSpinner'
 import useAuth from '../../hooks/useAuth'
 import { FcGoogle } from 'react-icons/fc'
 import { TbFidgetSpinner } from 'react-icons/tb'
+import { saveOrUpdateUser } from "../../utils";
 
 const Login = () => {
   const { signIn, signInWithGoogle, loading, user, setLoading } = useAuth()
@@ -12,41 +14,59 @@ const Login = () => {
 
   const from = location.state || '/'
 
+  // React Hook Form setup
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
+
+  // Form submit handler
+  const onSubmit = async (data) => {
+    const { email, password } = data;
+
+    try {
+    const {user} =  await signIn(email, password);
+          await saveOrUpdateUser({
+               name:user?.displayName,
+               email:user?.email,
+               image:user?.photoURL,
+              })
+      navigate(from, { replace: true });
+      toast.success("Login Successful");
+    } catch (err) {
+      console.log(err);
+      toast.error(err?.message);
+    }
+  };
+ 
+  // Handle Google SignIn
+  const handleGoogleSignIn = async () => {
+    try {
+    const {user} = await signInWithGoogle();
+    
+           await saveOrUpdateUser({
+                name:user?.displayName,
+                email:user?.email,
+                image:user?.photoURL,
+               })
+       
+      navigate(from, { replace: true });
+      toast.success("Login Successful");
+    } catch (err) {
+      console.log(err);
+      setLoading(false);
+      toast.error(err?.message);
+    }
+  };
+
+   
+
   if (loading) return <LoadingSpinner />
   if (user) return <Navigate to={from} replace={true} />
 
   // form submit handler
-  const handleSubmit = async event => {
-    event.preventDefault()
-    const form = event.target
-    const email = form.email.value
-    const password = form.password.value
-
-    try {
-      //User Login
-      await signIn(email, password)
-
-      navigate(from, { replace: true })
-      toast.success('Login Successful')
-    } catch (err) {
-      console.log(err)
-      toast.error(err?.message)
-    }
-  }
-
-  // Handle Google Signin
-  const handleGoogleSignIn = async () => {
-    try {
-      //User Registration using google
-      await signInWithGoogle()
-      navigate(from, { replace: true })
-      toast.success('Login Successful')
-    } catch (err) {
-      console.log(err)
-      setLoading(false)
-      toast.error(err?.message)
-    }
-  }
+ 
   return (
     <div className='flex justify-center items-center min-h-screen bg-white'>
       <div className='flex flex-col max-w-md p-6 rounded-md sm:p-10 bg-gray-100 text-gray-900'>
@@ -57,7 +77,7 @@ const Login = () => {
           </p>
         </div>
         <form
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit(onSubmit)}
           noValidate=''
           action=''
           className='space-y-6 ng-untouched ng-pristine ng-valid'
@@ -69,13 +89,23 @@ const Login = () => {
               </label>
               <input
                 type='email'
-                name='email'
                 id='email'
-                required
+                
                 placeholder='Enter Your Email Here'
                 className='w-full px-3 py-2 border rounded-md border-gray-300 focus:outline-lime-500 bg-gray-200 text-gray-900'
                 data-temp-mail-org='0'
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: {
+                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    message: "Invalid email format",
+                  },
+                })}
+
               />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+              )}
             </div>
             <div>
               <div className='flex justify-between'>
@@ -85,13 +115,25 @@ const Login = () => {
               </div>
               <input
                 type='password'
-                name='password'
+              
                 autoComplete='current-password'
                 id='password'
-                required
+               
                 placeholder='*******'
                 className='w-full px-3 py-2 border rounded-md border-gray-300 focus:outline-lime-500 bg-gray-200 text-gray-900'
-              />
+                 {...register("password", {
+                  required: "Password is required",
+                  minLength: { value: 6, message: "Password must be at least 6 characters" },
+                   pattern: {
+                    value: /^(?=.*[A-Z])(?=.*[!@#$&*]).{6,}$/,
+                    message:
+                      "Password must have 1 capital letter & 1 special char",
+                  },
+                })}
+             />
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+              )}
             </div>
           </div>
 

@@ -20,6 +20,9 @@ import ScholarshipDetails from '../pages/PlantDetails/ScholarshipDetails'
 import PaymentCheckout from '../Payment/PaymentCheckout'
 import PaymentSuccess from '../Payment/PaymentSuccess'
 import PaymentCancel from '../Payment/PaymentCancel'
+import PaymentFailed from '../Payment/PaymentFailed'
+import AddScholarship from '../components/Form/AddScholarship'
+import ManageScholarships from '../pages/Dashboard/Admin/ManageScholarships'
 
 export const router = createBrowserRouter([
   {
@@ -52,6 +55,10 @@ export const router = createBrowserRouter([
           element: <PaymentCancel/>,
       },
       {
+ path: '/payment-failed',
+  element: <PaymentFailed/>,
+      },
+      {
         path: '/plant/:id',
         element: <PlantDetails />,
       },
@@ -76,12 +83,21 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'add-plant',
+        path: 'add-scholarship',
         element: (
           <PrivateRoute>
-            <AddPlant />
+            < AddScholarship />
           </PrivateRoute>
         ),
+      },
+      {
+         path:'manage-scholarships',
+         element:(
+           <PrivateRoute>
+              <ManageScholarships/>
+           </PrivateRoute>
+         )
+
       },
       {
         path: 'my-inventory',

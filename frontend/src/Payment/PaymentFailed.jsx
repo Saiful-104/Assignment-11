@@ -1,31 +1,31 @@
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import Container from "../components/Shared/Container";
 import Heading from "../components/Shared/Heading";
 import Button from "../components/Shared/Button/Button";
 
-const PaymentCancel = () => {
+const PaymentFailed = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const errorMessage = params.get("error") || "Payment was cancelled or failed.";
 
   return (
     <Container>
       <div className="max-w-2xl mx-auto mt-20 text-center">
-        <Heading 
-          title="Payment Cancelled" 
-          subtitle="You cancelled the payment process." 
-        />
+        <Heading title="Payment Failed" subtitle={errorMessage} />
         <p className="mt-4 text-gray-600">
-          Your application has not been submitted. You can apply again when you're ready.
+          Your application has been saved with "unpaid" status. You can retry payment from your dashboard.
         </p>
         <div className="mt-8 space-y-4">
           <Button
             label="Return to Dashboard"
-            className="bg-gray-600 hover:bg-gray-700 px-6 py-3"
+            className="bg-red-600 hover:bg-red-700 px-6 py-3"
             onClick={() => navigate("/dashboard")}
           />
           <Button
-            label="Browse Scholarships"
+            label="Try Again"
             className="bg-blue-600 hover:bg-blue-700 px-6 py-3 ml-4"
-            onClick={() => navigate("/scholarships")}
+            onClick={() => navigate(-1)} // Go back to checkout page
           />
         </div>
       </div>
@@ -33,4 +33,4 @@ const PaymentCancel = () => {
   );
 };
 
-export default PaymentCancel;
+export default PaymentFailed;

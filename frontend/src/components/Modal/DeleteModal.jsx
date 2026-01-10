@@ -1,6 +1,6 @@
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 
-const DeleteModal = ({ closeModal, isOpen }) => {
+const DeleteModal = ({ closeModal, isOpen, confirmDelete, itemName }) => {
   return (
     <Dialog
       open={isOpen}
@@ -18,27 +18,29 @@ const DeleteModal = ({ closeModal, isOpen }) => {
               as='h3'
               className='text-lg font-medium leading-6 text-gray-900'
             >
-              Are you sure?
+              Delete Scholarship
             </DialogTitle>
             <div className='mt-2'>
               <p className='text-sm text-gray-500'>
-                You cannot undo once it&apos;s done!
+                Are you sure you want to delete "<span className='font-semibold'>{itemName}</span>"?
+                You cannot undo this action.
               </p>
             </div>
             <hr className='mt-8 ' />
             <div className='flex mt-2 justify-around'>
               <button
                 type='button'
+                onClick={confirmDelete}
                 className='cursor-pointer inline-flex justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2'
               >
-                Yes
+                Yes, Delete
               </button>
               <button
                 type='button'
                 className='cursor-pointer inline-flex justify-center rounded-md border border-transparent bg-red-100 px-4 py-2 text-sm font-medium text-red-900 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2'
                 onClick={closeModal}
               >
-                No
+                Cancel
               </button>
             </div>
           </DialogPanel>

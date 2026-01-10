@@ -27,49 +27,112 @@ const PaymentCheckout = () => {
 
   const { scholarshipName, universityName, applicationFees = 0, degree, universityImage } = scholarship || {};
 
-  const handlePayment = async () => {
-    if (!user) {
-      alert("You must be logged in to apply!");
+  // const handlePayment = async () => {
+  //   if (!user) {
+  //     alert("You must be logged in to apply!");
+  //     return;
+  //   }
+
+  //   setProcessing(true);
+
+  //   try {
+  //     // If fees are 0, no payment is required
+  //     if (Number(applicationFees) === 0) {
+  //       alert("This scholarship has no application fee. You can apply directly!");
+  //       setProcessing(false);
+  //       navigate(`/payment-success-free/${id}`);
+  //       return;
+  //     }
+
+  //     const paymentInfo = {
+  //       scholarshipId: scholarship._id,
+  //       scholarshipName,
+  //       universityName,
+  //       degree,
+  //       applicationFees: Number(applicationFees), // make sure it's a number
+  //       serviceCharge: scholarship.serviceCharge || 0,
+  //       customer: {
+  //         name: user.displayName,
+  //         email: user.email,
+  //         id: user.uid,
+  //         photoURL: user.photoURL
+  //       }
+  //     };
+
+  //     const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/create-checkout-session`, paymentInfo);
+
+  //     // Redirect to Stripe checkout page
+  //     window.location.href = data.url;
+  //   } catch (err) {
+  //     console.error("Payment error:", err);
+  //     alert("Failed to initiate payment. Try again.");
+  //     setProcessing(false);
+  //   }
+  // };
+  
+   // In PaymentCheckout.js, update handlePayment function:
+const handlePayment = async () => {
+  if (!user) {
+    alert("You must be logged in to apply!");
+    return;
+  }
+
+  setProcessing(true);
+
+  try {
+    // First save application with unpaid status
+    const applicationData = {
+      scholarshipId: scholarship._id,
+      scholarshipName,
+      universityName,
+      degree,
+      applicationFees: Number(applicationFees),
+      serviceCharge: scholarship.serviceCharge || 0,
+      userId: user.uid,
+      userName: user.displayName,
+      userEmail: user.email,
+      paymentStatus: "unpaid" // Initial status
+    };
+
+    // Save application to database
+    await axios.post(`${import.meta.env.VITE_API_URL}/save-application`, applicationData);
+
+    // If fees are 0, update to paid and redirect
+    if (Number(applicationFees) === 0) {
+      // Update application status to paid for free scholarships
+      await axios.post(`${import.meta.env.VITE_API_URL}/update-free-application`, {
+        scholarshipId: scholarship._id,
+        userEmail: user.email,
+      });
+     navigate(`/payment-success?free=true&scholarshipId=${scholarship._id}`);
       return;
     }
 
-    setProcessing(true);
-
-    try {
-      // If fees are 0, no payment is required
-      if (Number(applicationFees) === 0) {
-        alert("This scholarship has no application fee. You can apply directly!");
-        setProcessing(false);
-        navigate(`/payment-success-free/${id}`);
-        return;
+    // For paid scholarships, proceed with Stripe
+    const paymentInfo = {
+      scholarshipId: scholarship._id,
+      scholarshipName,
+      universityName,
+      degree,
+      applicationFees: Number(applicationFees),
+      serviceCharge: scholarship.serviceCharge || 0,
+      customer: {
+        name: user.displayName,
+        email: user.email,
+        id: user.uid,
+        photoURL: user.photoURL
       }
+    };
 
-      const paymentInfo = {
-        scholarshipId: scholarship._id,
-        scholarshipName,
-        universityName,
-        degree,
-        applicationFees: Number(applicationFees), // make sure it's a number
-        serviceCharge: scholarship.serviceCharge || 0,
-        customer: {
-          name: user.displayName,
-          email: user.email,
-          id: user.uid,
-          photoURL: user.photoURL
-        }
-      };
-
-      const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/create-checkout-session`, paymentInfo);
-
-      // Redirect to Stripe checkout page
-      window.location.href = data.url;
-    } catch (err) {
-      console.error("Payment error:", err);
-      alert("Failed to initiate payment. Try again.");
-      setProcessing(false);
-    }
-  };
-
+    const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/create-checkout-session`, paymentInfo);
+    window.location.href = data.url;
+  } catch (err) {
+    console.error("Payment error:", err);
+    alert("Failed to initiate payment. Try again.");
+    setProcessing(false);
+  }
+};
+   
   return (
     <Container>
       <div className="max-w-3xl mx-auto">

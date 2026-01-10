@@ -1,15 +1,17 @@
 import Container from "../../components/Shared/Container";
 import Heading from "../../components/Shared/Heading";
 import Button from "../../components/Shared/Button/Button";
-import { useState } from "react";
+import { use, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import LoadingSpinner from "../../components/Shared/LoadingSpinner";
+import useAuth from "../../hooks/useAuth";
 
 const ScholarshipDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const {user}= useAuth()
 
   // Fetch scholarship details
   const {
@@ -45,6 +47,11 @@ const ScholarshipDetails = () => {
   });
 
   const handleApply = () => {
+    if(!user){
+       navigate('/login')
+       return ;
+    }
+     
     // Redirect to payment checkout page
     navigate(`/payment/checkout/${id}`);
   };

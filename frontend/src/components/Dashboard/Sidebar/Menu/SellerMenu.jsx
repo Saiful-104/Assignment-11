@@ -1,5 +1,5 @@
 import { BsFillHouseAddFill } from 'react-icons/bs'
-import { MdHomeWork, MdOutlineManageHistory } from 'react-icons/md'
+import { MdHomeWork, MdOutlineManageHistory, MdAnalytics } from 'react-icons/md'
 import MenuItem from './MenuItem'
 const SellerMenu = () => {
   return (
@@ -14,6 +14,11 @@ const SellerMenu = () => {
         icon={MdOutlineManageHistory}
         label='Manage Scholarships'
         address='manage-scholarships'
+      />
+      <MenuItem
+       icon={MdAnalytics}
+        label='Analytics'
+        address='Analytics'
       />
     </>
   )

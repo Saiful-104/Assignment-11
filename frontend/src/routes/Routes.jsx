@@ -23,6 +23,7 @@ import PaymentCancel from '../Payment/PaymentCancel'
 import PaymentFailed from '../Payment/PaymentFailed'
 import AddScholarship from '../components/Form/AddScholarship'
 import ManageScholarships from '../pages/Dashboard/Admin/ManageScholarships'
+import Analytics from '../pages/Dashboard/Admin/Analytics'
 
 export const router = createBrowserRouter([
   {
@@ -114,6 +115,14 @@ export const router = createBrowserRouter([
             <ManageUsers />
           </PrivateRoute>
         ),
+      },
+      {
+       path:'analytics',
+       element:(
+        <PrivateRoute>
+          <Analytics/>
+        </PrivateRoute>
+       )
       },
       {
         path: 'profile',

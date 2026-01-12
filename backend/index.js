@@ -67,7 +67,7 @@ async function run() {
         }
         scholarshipData.applicationData = new Date();
         const result = await scholarshipsCollection.insertOne(scholarshipData);
-        console.log(result)
+        //console.log(result)
         res.send({
           success: true,
           data: result,
@@ -164,7 +164,6 @@ async function run() {
 
         let query = {};
 
-        // সার্চ ফাংশনালিটি
         if (search && search.trim() !== "") {
           query.$or = [
             { scholarshipName: { $regex: search, $options: "i" } },
@@ -173,22 +172,17 @@ async function run() {
           ];
         }
 
-        // ফিল্টার বাই Scholarship Category
         if (category && category !== "all") {
           query.scholarshipCategory = category;
         }
 
-        // ফিল্টার বাই Subject Category
         if (subject && subject !== "all") {
           query.subjectCategory = subject;
         }
-
-        // ফিল্টার বাই Location (Country)
         if (country && country !== "all") {
           query.universityCountry = country;
         }
 
-        // ফিল্টার বাই Degree
         if (degree && degree !== "all") {
           query.degree = degree;
         }
@@ -514,9 +508,9 @@ async function run() {
           email: userData.email,
         };
         const alreadyExists = await usersCollection.findOne(query);
-        console.log("ALREADY EXISTS USER 👉", !!alreadyExists);
+       // console.log("ALREADY EXISTS USER 👉", !!alreadyExists);
         if (alreadyExists) {
-          console.log("Update user info .....");
+         // console.log("Update user info .....");
           const result = await usersCollection.updateOne(query, {
             $set: {
               last_loggedIn: new Date().toISOString(),
@@ -525,7 +519,7 @@ async function run() {
           return res.send(result);
         }
         //console.log(userData)
-        console.log("Create new user .....");
+     //   console.log("Create new user .....");
         const result = await usersCollection.insertOne(userData);
         res.send(result);
       } catch (err) {
@@ -533,7 +527,7 @@ async function run() {
       }
     });
 
-    // get user role bt emaill
+    // get user role by emaill
 
     app.get("/user-role/:email", async (req, res) => {
       try {
@@ -554,6 +548,130 @@ async function run() {
         });
       }
     });
+
+    //get all users  for admin
+
+    app.get('/admin/users',verifyJWT, async (req,res)=>{
+         try{
+          const adminEmil = req.tokenEmail
+          const users= await usersCollection.find({
+            email:{$ne:adminEmil}
+          }).toArray()
+
+          res.send({
+             success:true,
+             data:users
+          });
+         }
+         catch(err){
+          console.error(err);
+            res.status(500).send({
+      success: false,
+      message: "Error fetching users"
+    });
+         }
+    })
+  //update user role
+
+  app.patch('/users/:id/role', async(req,res)=>{
+
+    try{
+    const {id}= req.params;
+    const {role}= req.body
+      const result = await usersCollection.updateOne(
+        {
+          _id:new ObjectId(id)
+        },
+        {
+          $set:{role}
+        }
+      );
+     // console.log("Done.....",result)
+      res.send({
+        success:true,
+        data:result,
+      })
+    }
+    catch(err){
+     res.status(500).send({
+       success:false,
+       message:"Error updating user role",
+     })
+    }
+  })
+
+  // Delete user
+
+  app.delete('/users/:id',async (req,res)=>{
+
+     try{
+         const{id} =req.params;
+         const result = await usersCollection.deleteOne({
+          _id: new ObjectId(id)
+         })
+         console.log("Deeeee",result)
+         res.send({
+          success:true,
+          data:result,
+         })
+     }
+     catch(err){
+res.status(500).send({
+      success: false,
+      message: "Error updating user role"
+    });
+     }
+  })
+
+   // get analytics data
+
+   app.get('/analytics', async (req,res)=>{
+       
+    try{
+       const totalUsers = await usersCollection.countDocuments();
+
+       const totalScholarShips = await scholarshipsCollection.countDocuments();
+       const paidApplications = await applicationsCollection.find({
+        paymentStatus:"paid"
+       }).toArray();
+
+       const totalFees = paidApplications.reduce((sum,app)=>{
+        return sum +(app.applicationFees||0)
+       },0)
+         // Applications per university
+    const appsPerUniversity = await applicationsCollection.aggregate([
+      { $group: { _id: "$universityName", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]).toArray();
+    
+    // Applications per scholarship category
+    const appsPerCategory = await applicationsCollection.aggregate([
+      { $group: { _id: "$scholarshipCategory", count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]).toArray();
+    //console.log("toooooooo",totalScholarShips)
+    
+    res.send({
+      success: true,
+      data: {
+        totalUsers,
+          totalScholarShips,
+        totalFees,
+        appsPerUniversity,
+        appsPerCategory
+      }
+    });
+    }
+    catch (err) {
+    console.error(err);
+    res.status(500).send({
+      success: false,
+      message: "Error fetching analytics"
+    });
+  }
+   })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

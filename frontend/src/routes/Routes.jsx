@@ -24,6 +24,7 @@ import PaymentFailed from '../Payment/PaymentFailed'
 import AddScholarship from '../components/Form/AddScholarship'
 import ManageScholarships from '../pages/Dashboard/Admin/ManageScholarships'
 import Analytics from '../pages/Dashboard/Admin/Analytics'
+import MyApplications from '../pages/Dashboard/Seller/MyApplications'
 
 export const router = createBrowserRouter([
   {
@@ -131,6 +132,14 @@ export const router = createBrowserRouter([
             <Profile />
           </PrivateRoute>
         ),
+      },
+      {
+        path:'my-applications',
+        element:(
+          <PrivateRoute>
+             <MyApplications/>
+          </PrivateRoute>
+        )
       },
       {
         path: 'my-orders',

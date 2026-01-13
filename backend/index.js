@@ -82,85 +82,80 @@ async function run() {
     });
 
     //get all scholarships for admin
-   
-     app.get('/admin/scholarships', async (req,res)=>{
-       
-       try{
-       const scholarship =await scholarshipsCollection.find().toArray()
+
+    app.get("/admin/scholarships", async (req, res) => {
+      try {
+        const scholarship = await scholarshipsCollection.find().toArray();
         res.send({
-          success:true,
-          data:scholarship ,
-        })
-       }
-       catch(err){
-         console.log(err)
-         res.status(500).send({
-           success:false,
-           message:"find error fetching scholarships"
-         })
-       }
-       
-     })
-
-     //delete shcolarship by id
-
-     app.delete('/scholarships/:id',async (req,res)=>{
-      try{
-        const {id} =req.params
-         const result = await scholarshipsCollection.deleteOne({
-          _id:new ObjectId(id)
-         });
-         res.send({
-          success:true,
-          data:result,
-         })
+          success: true,
+          data: scholarship,
+        });
+      } catch (err) {
+        console.log(err);
+        res.status(500).send({
+          success: false,
+          message: "find error fetching scholarships",
+        });
       }
-      catch(err){
-         console.error("Delete Scholarship Error:", err);
-    res.status(500).send({
-      success: false,
-      message: "Error deleting scholarship"
     });
-      }
-     })
 
-     //update one
-     app.put('/scholarships/:id',async (req,res)=>{
-        try{
-          const {id} =req.params;
-          const updateData = req.body
-           const result = await scholarshipsCollection.updateOne(
-              {_id: new ObjectId(id)},
-              {
-                $set: updateData
-              }
-           );
-           res.send({
-            success:true,
-            data:result,
-           });
-        }
-        catch(err){
+    //delete shcolarship by id
+
+    app.delete("/scholarships/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const result = await scholarshipsCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+        res.send({
+          success: true,
+          data: result,
+        });
+      } catch (err) {
+        console.error("Delete Scholarship Error:", err);
+        res.status(500).send({
+          success: false,
+          message: "Error deleting scholarship",
+        });
+      }
+    });
+
+    //update one
+    app.put("/scholarships/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const updateData = req.body;
+        const result = await scholarshipsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          {
+            $set: updateData,
+          }
+        );
+        res.send({
+          success: true,
+          data: result,
+        });
+      } catch (err) {
         console.error("Update Scholarship Error:", err);
-    res.status(500).send({
-      success: false,
-      message: "Error updating scholarship"
+        res.status(500).send({
+          success: false,
+          message: "Error updating scholarship",
+        });
+      }
     });
-        }
-     })
 
     // scholarship for search
     app.get("/scholarships", async (req, res) => {
       try {
         const { search, category, subject, country, degree } = req.query;
 
-        console.log("Query received:", {
-          search,
-          category,
-          subject,
-          country,
-          degree,
-        });
+        // console.log("Query received:", {
+        //   search,
+        //   category,
+        //   subject,
+        //   country,
+        //   degree,
+        // });
 
         let query = {};
 
@@ -376,13 +371,29 @@ async function run() {
             data: existingApp,
           });
         }
+        const scholarship = await scholarshipsCollection.findOne({
+          _id: new ObjectId(applicationData.scholarshipId),
+        });
+
+        if (!scholarship) {
+          return res.status(404).send({
+            success: false,
+            message: "Scholarship not found",
+          });
+        }
 
         const application = {
           scholarshipId: new ObjectId(applicationData.scholarshipId),
           userId: applicationData.userId,
           userName: applicationData.userName,
+          userEmail: applicationData.userEmail,
           universityName: applicationData.universityName,
-          scholarshipCategory: applicationData.scholarshipCategory || "Unknown",
+          universityAddress: `${scholarship.universityCity || ""}, ${
+            scholarship.universityCountry || ""
+          }`.trim(),
+          subjectCategory: scholarship.subjectCategory,
+          //  scholarshipCategory: applicationData.scholarshipCategory || "Unknown",
+          scholarshipCategory: scholarship.scholarshipCategory || "Unknown",
           degree: applicationData.degree,
           applicationFees: applicationData.applicationFees,
           serviceCharge: applicationData.serviceCharge || 0,
@@ -390,6 +401,10 @@ async function run() {
           paymentStatus: applicationData.paymentStatus || "unpaid", // Set paymentStatus
           applicationDate: new Date(),
           feedback: "",
+            contactNumber: "",
+      address: "",
+      additionalInfo: "",
+      updatedAt: null,
         };
         const result = await applicationsCollection.insertOne(application);
         res.send({
@@ -508,9 +523,9 @@ async function run() {
           email: userData.email,
         };
         const alreadyExists = await usersCollection.findOne(query);
-       // console.log("ALREADY EXISTS USER 👉", !!alreadyExists);
+        // console.log("ALREADY EXISTS USER 👉", !!alreadyExists);
         if (alreadyExists) {
-         // console.log("Update user info .....");
+          // console.log("Update user info .....");
           const result = await usersCollection.updateOne(query, {
             $set: {
               last_loggedIn: new Date().toISOString(),
@@ -519,7 +534,7 @@ async function run() {
           return res.send(result);
         }
         //console.log(userData)
-     //   console.log("Create new user .....");
+        //   console.log("Create new user .....");
         const result = await usersCollection.insertOne(userData);
         res.send(result);
       } catch (err) {
@@ -551,127 +566,273 @@ async function run() {
 
     //get all users  for admin
 
-    app.get('/admin/users',verifyJWT, async (req,res)=>{
-         try{
-          const adminEmil = req.tokenEmail
-          const users= await usersCollection.find({
-            email:{$ne:adminEmil}
-          }).toArray()
+    app.get("/admin/users", verifyJWT, async (req, res) => {
+      try {
+        const adminEmil = req.tokenEmail;
+        const users = await usersCollection
+          .find({
+            email: { $ne: adminEmil },
+          })
+          .toArray();
 
-          res.send({
-             success:true,
-             data:users
-          });
-         }
-         catch(err){
-          console.error(err);
-            res.status(500).send({
-      success: false,
-      message: "Error fetching users"
-    });
-         }
-    })
-  //update user role
-
-  app.patch('/users/:id/role', async(req,res)=>{
-
-    try{
-    const {id}= req.params;
-    const {role}= req.body
-      const result = await usersCollection.updateOne(
-        {
-          _id:new ObjectId(id)
-        },
-        {
-          $set:{role}
-        }
-      );
-     // console.log("Done.....",result)
-      res.send({
-        success:true,
-        data:result,
-      })
-    }
-    catch(err){
-     res.status(500).send({
-       success:false,
-       message:"Error updating user role",
-     })
-    }
-  })
-
-  // Delete user
-
-  app.delete('/users/:id',async (req,res)=>{
-
-     try{
-         const{id} =req.params;
-         const result = await usersCollection.deleteOne({
-          _id: new ObjectId(id)
-         })
-         console.log("Deeeee",result)
-         res.send({
-          success:true,
-          data:result,
-         })
-     }
-     catch(err){
-res.status(500).send({
-      success: false,
-      message: "Error updating user role"
-    });
-     }
-  })
-
-   // get analytics data
-
-   app.get('/analytics', async (req,res)=>{
-       
-    try{
-       const totalUsers = await usersCollection.countDocuments();
-
-       const totalScholarShips = await scholarshipsCollection.countDocuments();
-       const paidApplications = await applicationsCollection.find({
-        paymentStatus:"paid"
-       }).toArray();
-
-       const totalFees = paidApplications.reduce((sum,app)=>{
-        return sum +(app.applicationFees||0)
-       },0)
-         // Applications per university
-    const appsPerUniversity = await applicationsCollection.aggregate([
-      { $group: { _id: "$universityName", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 10 }
-    ]).toArray();
-    
-    // Applications per scholarship category
-    const appsPerCategory = await applicationsCollection.aggregate([
-      { $group: { _id: "$scholarshipCategory", count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]).toArray();
-    //console.log("toooooooo",totalScholarShips)
-    
-    res.send({
-      success: true,
-      data: {
-        totalUsers,
-          totalScholarShips,
-        totalFees,
-        appsPerUniversity,
-        appsPerCategory
+        res.send({
+          success: true,
+          data: users,
+        });
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({
+          success: false,
+          message: "Error fetching users",
+        });
       }
     });
-    }
-    catch (err) {
-    console.error(err);
-    res.status(500).send({
-      success: false,
-      message: "Error fetching analytics"
-    });
-  }
-   })
+    //update user role
 
+    app.patch("/users/:id/role", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { role } = req.body;
+        const result = await usersCollection.updateOne(
+          {
+            _id: new ObjectId(id),
+          },
+          {
+            $set: { role },
+          }
+        );
+        // console.log("Done.....",result)
+        res.send({
+          success: true,
+          data: result,
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error updating user role",
+        });
+      }
+    });
+
+    // Delete user
+
+    app.delete("/users/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const result = await usersCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+        // console.log("Deeeee",result)
+        res.send({
+          success: true,
+          data: result,
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error updating user role",
+        });
+      }
+    });
+
+    // get analytics data
+
+    app.get("/analytics", async (req, res) => {
+      try {
+        const totalUsers = await usersCollection.countDocuments();
+
+        const totalScholarShips = await scholarshipsCollection.countDocuments();
+        const paidApplications = await applicationsCollection
+          .find({
+            paymentStatus: "paid",
+          })
+          .toArray();
+
+        const totalFees = paidApplications.reduce((sum, app) => {
+          return sum + (app.applicationFees || 0);
+        }, 0);
+        // Applications per university
+        const appsPerUniversity = await applicationsCollection
+          .aggregate([
+            { $group: { _id: "$universityName", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 },
+          ])
+          .toArray();
+
+        // Applications per scholarship category
+        const appsPerCategory = await applicationsCollection
+          .aggregate([
+            { $group: { _id: "$scholarshipCategory", count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+          ])
+          .toArray();
+        //console.log("toooooooo",totalScholarShips)
+
+        res.send({
+          success: true,
+          data: {
+            totalUsers,
+            totalScholarShips,
+            totalFees,
+            appsPerUniversity,
+            appsPerCategory,
+          },
+        });
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({
+          success: false,
+          message: "Error fetching analytics",
+        });
+      }
+    });
+
+    // get my application
+
+    app.get("/my-applications/:email", verifyJWT, async (req, res) => {
+      try {
+        const { email } = req.params;
+        if (req.tokenEmail !== email) {
+          return res
+            .status(403)
+            .send({ success: false, message: "Unauthorized" });
+        }
+        const result = await applicationsCollection
+          .find({
+            userEmail: email,
+          })
+          .toArray();
+
+        res.send({
+          success: true,
+          data: result,
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error fetching applications",
+        });
+      }
+    });
+
+    //application details
+    app.get("/application-details/:id", verifyJWT, async (req, res) => {
+      try {
+        const { id } = req.params;
+
+        const result = await applicationsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        if (!result) {
+          return res
+            .status(404)
+            .send({ success: false, message: "Application not found" });
+        }
+        if (result.userEmail !== req.tokenEmail) {
+          return res
+            .status(403)
+            .send({ success: false, message: "Unauthorized" });
+        }
+        res.send({
+          success: true,
+          data: {
+            result,
+          },
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error fetching application details",
+        });
+      }
+    });
+
+    //application delete
+    app.delete("/applications/:id", verifyJWT, async (req, res) => {
+      try {
+        const { id } = req.params;
+        const result = await applicationsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        if (!result) {
+          return res
+            .status(404)
+            .send({ success: false, message: "Application not found" });
+        }
+        if (result.userEmail !== req.tokenEmail) {
+          return res
+            .status(403)
+            .send({ success: false, message: "Unauthorized" });
+        }
+        if (result.applicationStatus !== "pending") {
+          return res.status(400).send({
+            success: false,
+            message: "Cannot delete completed application",
+          });
+        }
+        const resultt = await applicationsCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        res.send({
+          success: true,
+          data: resultt,
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error deleting application",
+        });
+      }
+    });
+    // update application for edit
+    app.put("/applications/:id", verifyJWT, async (req, res) => {
+      try {
+        const { id } = req.params;
+        const updateData = req.body;
+        const application = await applicationsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        if (!application) {
+          return res
+            .status(404)
+            .send({ success: false, message: "Application not found" });
+        }
+
+        if (application.userEmail !== req.tokenEmail) {
+          return res
+            .status(403)
+            .send({ success: false, message: "Unauthorized" });
+        }
+        if (application.applicationStatus !== "pending") {
+          return res.status(400).send({
+            success: false,
+            message: "Cannot edit completed application",
+          });
+        }
+         const allowedUpdates = {
+      contactNumber: updateData.contactNumber || application.contactNumber,
+      address: updateData.address || application.address,
+      additionalInfo: updateData.additionalInfo || application.additionalInfo,
+      updatedAt: new Date().toISOString()
+    };
+        const result = await applicationsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: allowedUpdates }
+        );
+
+        res.send({
+          success: true,
+          data: result,
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error updating application",
+        });
+      }
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

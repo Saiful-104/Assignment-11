@@ -20,6 +20,11 @@ const SellerMenu = () => {
         label='Analytics'
         address='Analytics'
       />
+        <MenuItem
+       icon={MdAnalytics}
+        label='My Applications'
+        address='my-applications'
+      />
     </>
   )
 }

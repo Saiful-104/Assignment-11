@@ -1,9 +1,10 @@
 import { BsFingerprint } from 'react-icons/bs'
+import{MdReviews,MdManageAccounts,} from 'react-icons/md'
 import { GrUserAdmin } from 'react-icons/gr'
 import MenuItem from './MenuItem'
 import { useState } from 'react'
 import BecomeSellerModal from '../../../Modal/BecomeSellerModal'
-const CustomerMenu = () => {
+const ModeratorMenu = () => {
   const [isOpen, setIsOpen] = useState(false)
 
   const closeModal = () => {
@@ -24,8 +25,18 @@ const CustomerMenu = () => {
       </div>
 
       <BecomeSellerModal closeModal={closeModal} isOpen={isOpen} />
+      <MenuItem
+  icon={MdReviews}
+  label="All Reviews"
+  address="all-reviews"
+/>
+<MenuItem
+  icon={MdManageAccounts}
+  label="Manage Applications"
+  address="moderator-applications"
+/>
     </>
   )
 }
 
-export default CustomerMenu
+export default ModeratorMenu

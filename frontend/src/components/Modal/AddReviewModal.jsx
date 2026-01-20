@@ -1,11 +1,11 @@
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-//import useAxiosSecure from '../../../hooks/useAxiosSecure'
+//import useAxiosSecure from '../../hooks/useAxiosSecure'
 import toast from 'react-hot-toast'
 import useAxiosSecure from '../../hooks/useAxiosSecure'
 
-const AddReviewModal = ({ setIsOpen, isOpen, application }) => {
+const AddReviewModal = ({ setIsOpen, isOpen, application, user }) => {
   const axiosSecure = useAxiosSecure()
   const queryClient = useQueryClient()
   const [rating, setRating] = useState(5)
@@ -20,23 +20,34 @@ const AddReviewModal = ({ setIsOpen, isOpen, application }) => {
       queryClient.invalidateQueries(['my-applications'])
       toast.success('Review added successfully')
       setIsOpen(false)
+      setComment('')
+      setRating(5)
     },
-    onError: () => {
-      toast.error('Failed to add review')
+    onError: (error) => {
+      console.error('Review error:', error)
+      toast.error(error.response?.data?.message || 'Failed to add review')
     }
   })
 
   const handleSubmit = (e) => {
     e.preventDefault()
     
+    if (!comment.trim()) {
+      toast.error('Please write a comment')
+      return
+    }
+
     const reviewData = {
       scholarshipId: application.scholarshipId,
       universityName: application.universityName,
-      userName: application.userName,
-      userEmail: application.userEmail,
-      userImage: '', // Add user image if available
+      universityId: application.universityId,
+      userName: user?.displayName || application.userName,
+      userEmail: user?.email || application.userEmail,
+      userImage: user?.photoURL || '',
       ratingPoint: rating,
       reviewComment: comment,
+      applicationId: application._id,
+      createdAt: new Date().toISOString()
     }
 
     addReviewMutation.mutate(reviewData)
@@ -46,76 +57,84 @@ const AddReviewModal = ({ setIsOpen, isOpen, application }) => {
     <Dialog
       open={isOpen}
       as='div'
-      className='relative z-10 focus:outline-none'
+      className='relative z-50 focus:outline-none'
       onClose={() => setIsOpen(false)}
     >
+      <div className='fixed inset-0 bg-black/30' />
       <div className='fixed inset-0 z-10 w-screen overflow-y-auto'>
         <div className='flex min-h-full items-center justify-center p-4'>
-          <DialogPanel
-            transition
-            className='w-full max-w-md bg-white p-6 backdrop-blur-2xl duration-300 ease-out data-closed:transform-[scale(95%)] data-closed:opacity-0 shadow-xl rounded-2xl'
-          >
-            <div className='flex justify-between items-center mb-4'>
-              <DialogTitle as='h3' className='text-lg font-medium text-gray-900'>
-                Add Review
+          <DialogPanel className='w-full max-w-md bg-white rounded-xl shadow-2xl p-6'>
+            <div className='flex justify-between items-center mb-6 border-b pb-4'>
+              <DialogTitle as='h3' className='text-xl font-bold text-gray-900'>
+                Add Review for {application?.universityName}
               </DialogTitle>
               <button
                 onClick={() => setIsOpen(false)}
-                className='bg-red-100 px-3 py-1 rounded-md text-red-500 cursor-pointer'
+                className='text-gray-400 hover:text-gray-600 text-xl'
               >
-                X
+                ✕
               </button>
             </div>
             
             <form onSubmit={handleSubmit}>
-              <div className='space-y-4'>
+              <div className='space-y-6'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
-                    Rating (1-5 stars)
+                  <label className='block text-sm font-medium text-gray-700 mb-3'>
+                    How would you rate your experience?
                   </label>
-                  <div className='flex space-x-1'>
+                  <div className='flex justify-center space-x-2 mb-2'>
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         key={star}
                         type='button'
                         onClick={() => setRating(star)}
-                        className={`text-2xl ${star <= rating ? 'text-yellow-500' : 'text-gray-300'}`}
+                        className={`text-3xl transition-transform hover:scale-110 ${
+                          star <= rating ? 'text-yellow-500' : 'text-gray-300'
+                        }`}
                       >
                         ★
                       </button>
                     ))}
                   </div>
-                  <p className='text-sm text-gray-500 mt-1'>Selected: {rating} stars</p>
+                  <p className='text-center text-sm text-gray-600'>
+                    {rating === 5 ? 'Excellent' : 
+                     rating === 4 ? 'Good' : 
+                     rating === 3 ? 'Average' : 
+                     rating === 2 ? 'Poor' : 'Very Poor'}
+                  </p>
                 </div>
                 
                 <div>
-                  <label className='block text-sm font-medium text-gray-700'>
-                    Comment
+                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                    Your Review
                   </label>
                   <textarea
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    className='mt-1 block w-full border border-gray-300 rounded-md p-2'
+                    className='mt-1 block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
                     rows='4'
-                    placeholder='Write your review here...'
+                    placeholder='Share your experience with this scholarship application process...'
                     required
                   />
+                  <p className='text-xs text-gray-500 mt-1'>
+                    Your review will help other students
+                  </p>
                 </div>
                 
-                <div className='flex justify-around'>
-                  <button
-                    type='submit'
-                    disabled={addReviewMutation.isPending}
-                    className='px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50'
-                  >
-                    {addReviewMutation.isPending ? 'Submitting...' : 'Submit Review'}
-                  </button>
+                <div className='flex justify-end space-x-3 pt-4 border-t'>
                   <button
                     type='button'
                     onClick={() => setIsOpen(false)}
-                    className='px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600'
+                    className='px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors'
                   >
                     Cancel
+                  </button>
+                  <button
+                    type='submit'
+                    disabled={addReviewMutation.isPending}
+                    className='px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors'
+                  >
+                    {addReviewMutation.isPending ? 'Submitting...' : 'Submit Review'}
                   </button>
                 </div>
               </div>

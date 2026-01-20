@@ -5,7 +5,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const admin = require("firebase-admin");
 const port = process.env.PORT || 3000;
 const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString(
-  "utf-8"
+  "utf-8",
 );
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const serviceAccount = JSON.parse(decoded);
@@ -20,7 +20,7 @@ app.use(
     origin: [process.env.CLIENT_DOMAIN],
     credentials: true,
     optionSuccessStatus: 200,
-  })
+  }),
 );
 app.use(express.json());
 
@@ -129,7 +129,7 @@ async function run() {
           { _id: new ObjectId(id) },
           {
             $set: updateData,
-          }
+          },
         );
         res.send({
           success: true,
@@ -204,14 +204,12 @@ async function run() {
     app.get("/api/scholarships/filters", async (req, res) => {
       try {
         const categories = await scholarshipsCollection.distinct(
-          "scholarshipCategory"
+          "scholarshipCategory",
         );
-        const subjects = await scholarshipsCollection.distinct(
-          "subjectCategory"
-        );
-        const countries = await scholarshipsCollection.distinct(
-          "universityCountry"
-        );
+        const subjects =
+          await scholarshipsCollection.distinct("subjectCategory");
+        const countries =
+          await scholarshipsCollection.distinct("universityCountry");
         const degrees = await scholarshipsCollection.distinct("degree");
 
         const filters = {
@@ -257,45 +255,45 @@ async function run() {
     });
 
     //post reviews
-    app.post("/reviews", async (req, res) => {
-      try {
-        const review = req.body;
-        review.scholarshipId = new ObjectId(review.scholarshipId);
-        review.reviewDate = new Date();
-        const result = await reviewsCollection.insertOne(review);
-        res.send({
-          success: true,
-          data: result,
-        });
-      } catch (err) {
-        //console.error('REVIEW ERROR 👉', err);
-        res.status(500).send({
-          success: false,
-          error: err.message,
-        });
-      }
-    });
+    // app.post("/reviews", async (req, res) => {
+    //   try {
+    //     const review = req.body;
+    //     review.scholarshipId = new ObjectId(review.scholarshipId);
+    //     review.reviewDate = new Date();
+    //     const result = await reviewsCollection.insertOne(review);
+    //     res.send({
+    //       success: true,
+    //       data: result,
+    //     });
+    //   } catch (err) {
+    //     //console.error('REVIEW ERROR 👉', err);
+    //     res.status(500).send({
+    //       success: false,
+    //       error: err.message,
+    //     });
+    //   }
+    // });
 
-    // get reviews by scholarship id
+    // // get reviews by scholarship id
 
-    app.get("/reviews/:scholarshipId", async (req, res) => {
-      try {
-        const reviews = await reviewsCollection
-          .find({ scholarshipId: new ObjectId(req.params.scholarshipId) })
-          .sort({ reviewDate: -1 })
-          .toArray();
-        res.send({
-          success: true,
-          data: reviews,
-        });
-      } catch (err) {
-        console.error("REVIEW ERROR 👉", err);
-        res.status(500).send({
-          success: false,
-          error: err.message,
-        });
-      }
-    });
+    // app.get("/reviews/:scholarshipId", async (req, res) => {
+    //   try {
+    //     const reviews = await reviewsCollection
+    //       .find({ scholarshipId: new ObjectId(req.params.scholarshipId) })
+    //       .sort({ reviewDate: -1 })
+    //       .toArray();
+    //     res.send({
+    //       success: true,
+    //       data: reviews,
+    //     });
+    //   } catch (err) {
+    //     console.error("REVIEW ERROR 👉", err);
+    //     res.status(500).send({
+    //       success: false,
+    //       error: err.message,
+    //     });
+    //   }
+    // });
 
     // get single scholarship
     app.get("/scholarships/:id", async (req, res) => {
@@ -401,10 +399,10 @@ async function run() {
           paymentStatus: applicationData.paymentStatus || "unpaid", // Set paymentStatus
           applicationDate: new Date(),
           feedback: "",
-            contactNumber: "",
-      address: "",
-      additionalInfo: "",
-      updatedAt: null,
+          contactNumber: "",
+          address: "",
+          additionalInfo: "",
+          updatedAt: null,
         };
         const result = await applicationsCollection.insertOne(application);
         res.send({
@@ -434,7 +432,7 @@ async function run() {
               paymentStatus: "paid",
               applicationDate: new Date(),
             },
-          }
+          },
         );
 
         res.send({ success: true, data: result });
@@ -490,7 +488,7 @@ async function run() {
             // Update existing application payment status
             await applicationsCollection.updateOne(
               { _id: existingApp._id },
-              { $set: { paymentStatus: "paid" } }
+              { $set: { paymentStatus: "paid" } },
             );
           }
 
@@ -541,6 +539,16 @@ async function run() {
         console.error("USER SAVE/UPDATE ERROR 👉", err);
       }
     });
+
+        //get a user role
+      app.get('/user/role',verifyJWT,async(req,res)=>{
+          
+          const result = await usersCollection.findOne({
+            email: req.tokenEmail,
+          })
+          res.send({role: result?.role})
+
+      })
 
     // get user role by emaill
 
@@ -599,7 +607,7 @@ async function run() {
           },
           {
             $set: { role },
-          }
+          },
         );
         // console.log("Done.....",result)
         res.send({
@@ -811,15 +819,16 @@ async function run() {
             message: "Cannot edit completed application",
           });
         }
-         const allowedUpdates = {
-      contactNumber: updateData.contactNumber || application.contactNumber,
-      address: updateData.address || application.address,
-      additionalInfo: updateData.additionalInfo || application.additionalInfo,
-      updatedAt: new Date().toISOString()
-    };
+        const allowedUpdates = {
+          contactNumber: updateData.contactNumber || application.contactNumber,
+          address: updateData.address || application.address,
+          additionalInfo:
+            updateData.additionalInfo || application.additionalInfo,
+          updatedAt: new Date().toISOString(),
+        };
         const result = await applicationsCollection.updateOne(
           { _id: new ObjectId(id) },
-          { $set: allowedUpdates }
+          { $set: allowedUpdates },
         );
 
         res.send({
@@ -834,10 +843,480 @@ async function run() {
       }
     });
 
+    // add review endpoint
+    app.post("/reviews", verifyJWT, async (req, res) => {
+      try {
+        const review = req.body;
+        const requiredFields = [
+          "scholarshipId",
+          "ratingPoint",
+          "reviewComment",
+        ];
+        const missingFields = requiredFields.filter((field) => !review[field]);
+
+        if (missingFields.length > 0) {
+          return res.status(400).send({
+            success: false,
+            message: `Missing required fields: ${missingFields.join(", ")}`,
+          });
+        }
+        if (review.ratingPoint < 1 || review.ratingPoint > 5) {
+          return res.status(400).send({
+            success: false,
+            message: "Rating must be between 1 and 5",
+          });
+        }
+        const existingReview = await reviewsCollection.findOne({
+          scholarshipId: new ObjectId(review.scholarshipId),
+          userEmail: req.tokenEmail,
+        });
+        if (existingReview) {
+          return res.status(400).send({
+            success: false,
+            message: "You have already reviewed this scholarship",
+          });
+        }
+        const application = await applicationsCollection.findOne({
+          scholarshipId: new ObjectId(review.scholarshipId),
+          userEmail: req.tokenEmail,
+          applicationStatus: "completed",
+        });
+        if (!application) {
+          return res.status(403).send({
+            success: false,
+            message:
+              "You can only review scholarships you have completed applications for",
+          });
+        }
+        const scholarship = await scholarshipsCollection.findOne({
+          _id: new ObjectId(review.scholarshipId),
+        });
+
+        if (!scholarship) {
+          return res.status(404).send({
+            success: false,
+            message: "Scholarship not found",
+          });
+        }
+
+        const reviewData = {
+          scholarshipId: new ObjectId(review.scholarshipId),
+          applicationId: application._id,
+          universityId: application.universityId,
+          scholarshipName: scholarship.scholarshipName,
+          universityName: application.universityName,
+          userName: req.tokenName || review.userName,
+          userEmail: req.tokenEmail,
+          userImage: review.userImage || "",
+          ratingPoint: parseInt(review.ratingPoint),
+          reviewComment: review.reviewComment.trim(),
+          status: "published",
+          reviewDate: new Date(),
+          createdAt: new Date(),
+          helpfulCount: 0,
+          reportCount: 0,
+        };
+        const result = await reviewsCollection.insertOne(reviewData);
+
+        const allReviews = await reviewsCollection
+          .find({
+            scholarshipId: new ObjectId(review.scholarshipId),
+          })
+          .toArray();
+
+        if (allReviews.length > 0) {
+          const avgRating =
+            allReviews.reduce((acc, cur) => acc + cur.ratingPoint, 0) /
+            allReviews.length;
+
+          await scholarshipsCollection.updateOne(
+            { _id: new ObjectId(review.scholarshipId) },
+            {
+              $set: {
+                avgRating: parseFloat(avgRating.toFixed(1)),
+                totalReviews: allReviews.length,
+                lastReviewDate: new Date(),
+              },
+            },
+          );
+        }
+        res.send({
+          success: true,
+          message: "Review submitted successfully",
+          data: {
+            insertedId: result.insertedId,
+            review: reviewData,
+          },
+        });
+      } catch (err) {
+        console.error("REVIEW ERROR:", err);
+        res.status(500).send({
+          success: false,
+          error: "Internal server error",
+        });
+      }
+    });
+
+    //get users by review
+    app.get("/my-reviews", verifyJWT, async (req, res) => {
+      try {
+        const email = req.tokenEmail;
+
+        const reviews = await reviewsCollection
+          .find({ userEmail: email })
+          .sort({ reviewDate: -1 })
+          .toArray();
+
+        res.send({
+          success: true,
+          data: reviews,
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error fetching user reviews",
+        });
+      }
+    });
+
+    //update review
+
+    app.put("/reviews/:id", verifyJWT, async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { ratingPoint, reviewComment } = req.body;
+        const review = await reviewsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+        if (!review) {
+          return res.status(404).send({
+            success: false,
+            message: "Review not found",
+          });
+        }
+        if (review.userEmail !== req.tokenEmail) {
+          return res.status(403).send({
+            success: false,
+            message: "You can only edit your own reviews",
+          });
+        }
+        if (ratingPoint && (ratingPoint < 1 || ratingPoint > 5)) {
+          return res.status(400).send({
+            success: false,
+            message: "Rating must be between 1 and 5",
+          });
+        }
+        const updates = {};
+        if (ratingPoint) {
+          updates.ratingPoint = parseInt(ratingPoint);
+        }
+        if (reviewComment) updates.reviewComment = reviewComment.trim();
+        updates.updatedAt = new Date();
+        const result = await reviewsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updates },
+        );
+        res.send({
+          success: true,
+          message: "Review updated successfully",
+          data: result,
+        });
+      } catch (err) {}
+    });
+    //review delete
+
+    app.delete("/reviews/:id", verifyJWT, async (req, res) => {
+      try {
+        const { id } = req.params;
+        const review = await reviewsCollection.findOne({
+          _id: new ObjectId(id),
+        });
+
+        if (!review) {
+          return res.status(404).send({
+            success: false,
+            message: "Review not found",
+          });
+        }
+        if (review.userEmail !== req.tokenEmail) {
+          return res.status(403).send({
+            success: false,
+            message: "You can only delete your own reviews",
+          });
+        }
+        const result = await reviewsCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+        res.send({
+          success: true,
+          message: "Review deleted successfully",
+          data: result,
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error deleting review",
+        });
+      }
+    });
+
+    //get all application for moderator
+    app.get("/moderator/applications", verifyJWT, async (req, res) => {
+      try {
+        // Verify user is moderator
+        const user = await usersCollection.findOne({ email: req.tokenEmail });
+
+        if (!user || user.role !== "moderator") {
+          return res.status(403).send({
+            success: false,
+            message: "Access denied",
+          });
+        }
+
+        const applications = await applicationsCollection
+          .find({})
+          .sort({ applicationDate: -1 })
+          .toArray();
+
+        res.send({
+          success: true,
+          data: applications,
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error fetching applications",
+        });
+      }
+    });
+
+    // Update application feedback
+    app.put(
+      "/moderator/applications/:id/feedback",
+      verifyJWT,
+      async (req, res) => {
+        try {
+          const { id } = req.params;
+          const { feedback } = req.body;
+
+          // Verify user is moderator
+          const user = await usersCollection.findOne({ email: req.tokenEmail });
+
+          if (!user || user.role !== "moderator") {
+            return res.status(403).send({
+              success: false,
+              message: "Access denied",
+            });
+          }
+
+          const result = await applicationsCollection.updateOne(
+            { _id: new ObjectId(id) },
+            {
+              $set: {
+                feedback: feedback,
+                updatedAt: new Date(),
+              },
+            },
+          );
+
+          res.send({
+            success: true,
+            message: "Feedback updated",
+            data: result,
+          });
+        } catch (err) {
+          res.status(500).send({
+            success: false,
+            message: "Error updating feedback",
+          });
+        }
+      },
+    );
+
+    // Update application status
+    app.put(
+      "/moderator/applications/:id/status",
+      verifyJWT,
+      async (req, res) => {
+        try {
+          const { id } = req.params;
+          const { applicationStatus } = req.body;
+
+          // Verify user is moderator
+          const user = await usersCollection.findOne({ email: req.tokenEmail });
+
+          if (!user || user.role !== "moderator") {
+            return res.status(403).send({
+              success: false,
+              message: "Access denied",
+            });
+          }
+
+          const result = await applicationsCollection.updateOne(
+            { _id: new ObjectId(id) },
+            {
+              $set: {
+                applicationStatus: applicationStatus,
+                updatedAt: new Date(),
+              },
+            },
+          );
+
+          res.send({
+            success: true,
+            message: "Status updated",
+            data: result,
+          });
+        } catch (err) {
+          res.status(500).send({
+            success: false,
+            message: "Error updating status",
+          });
+        }
+      },
+    );
+
+    // Reject application
+    app.put(
+      "/moderator/applications/:id/reject",
+      verifyJWT,
+      async (req, res) => {
+        try {
+          const { id } = req.params;
+
+          // Verify user is moderator
+          const user = await usersCollection.findOne({ email: req.tokenEmail });
+
+          if (!user || user.role !== "moderator") {
+            return res.status(403).send({
+              success: false,
+              message: "Access denied",
+            });
+          }
+
+          const result = await applicationsCollection.updateOne(
+            { _id: new ObjectId(id) },
+            {
+              $set: {
+                applicationStatus: "rejected",
+                updatedAt: new Date(),
+              },
+            },
+          );
+
+          res.send({
+            success: true,
+            message: "Application rejected",
+            data: result,
+          });
+        } catch (err) {
+          res.status(500).send({
+            success: false,
+            message: "Error rejecting application",
+          });
+        }
+      },
+    );
+
+    //get all reviews
+    app.get("/moderator/review", verifyJWT, async (req, res) => {
+      try {
+        const user = await usersCollection.findOne({ email: req.tokenEmail });
+        if (!user || user.role !== "moderator") {
+          return res.status(403).send({
+            success: false,
+            message: "Access denied",
+          });
+        }
+        const review = await reviewsCollection
+          .find({})
+          .sort({ reviewDate: -1 })
+          .toArray();
+        res.send({
+          success: true,
+          data: review,
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error fetching reviews",
+        });
+      }
+    });
+
+    // Delete review
+    app.delete("/moderator/reviews/:id", verifyJWT, async (req, res) => {
+      try {
+        const { id } = req.params;
+        const user = await usersCollection.findOne({ email: req.tokenEmail });
+
+        if (!user || user.role !== "moderator") {
+          return res.status(403).send({
+            success: false,
+            message: "Access denied",
+          });
+        }
+        const result = await reviewsCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+        res.send({
+          success: true,
+          data: result,
+        });
+      } catch (err) {
+        res.status(500).send({
+          success: false,
+          message: "Error deleting review",
+        });
+      }
+    });
+    // get review by scholarship id
+    app.get("/reviews/:scholarshipId", async (req, res) => {
+      try {
+        const { scholarshipId } = req.params;
+
+        // Validate ObjectId
+        if (!ObjectId.isValid(scholarshipId)) {
+          return res.status(400).send({
+            success: false,
+            message: "Invalid scholarship ID",
+          });
+        }
+
+        console.log("🔍 Fetching reviews for scholarship ID:", scholarshipId);
+
+        // Check if there are any reviews in the collection
+        const totalReviews = await reviewsCollection.countDocuments();
+        console.log("Total reviews in database:", totalReviews);
+
+        const reviews = await reviewsCollection
+          .find({
+            scholarshipId: new ObjectId(scholarshipId), 
+          })
+          .sort({ reviewDate: -1 })
+          .toArray();
+
+        console.log(
+          `✅ Found ${reviews.length} reviews for scholarship ${scholarshipId}`,
+        );
+        console.log("Reviews data:", reviews);
+
+        res.send({
+          success: true,
+          data: reviews,
+        });
+      } catch (err) {
+        console.error("❌ REVIEW ERROR:", err);
+        res.status(500).send({
+          success: false,
+          error: err.message,
+        });
+      }
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
+      "Pinged your deployment. You successfully connected to MongoDB!",
     );
   } finally {
     // Ensures that the client will close when you finish/error

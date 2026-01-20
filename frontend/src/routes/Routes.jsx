@@ -25,6 +25,11 @@ import AddScholarship from '../components/Form/AddScholarship'
 import ManageScholarships from '../pages/Dashboard/Admin/ManageScholarships'
 import Analytics from '../pages/Dashboard/Admin/Analytics'
 import MyApplications from '../pages/Dashboard/Seller/MyApplications'
+import MyReviews from '../pages/Dashboard/Seller/MyReviews'
+import ManageApplications from '../pages/Dashboard/Customer/ManageApplications'
+import AllReviews from '../pages/Dashboard/Customer/AllReviews'
+import AdminRoute from './AdminRoute'
+import ModeratorRout from './ModeratorRout'
 
 export const router = createBrowserRouter([
   {
@@ -88,7 +93,9 @@ export const router = createBrowserRouter([
         path: 'add-scholarship',
         element: (
           <PrivateRoute>
-            < AddScholarship />
+          <AdminRoute>
+              < AddScholarship />
+          </AdminRoute>
           </PrivateRoute>
         ),
       },
@@ -96,7 +103,9 @@ export const router = createBrowserRouter([
          path:'manage-scholarships',
          element:(
            <PrivateRoute>
-              <ManageScholarships/>
+              <AdminRoute>
+                <ManageScholarships/>
+              </AdminRoute>
            </PrivateRoute>
          )
 
@@ -113,7 +122,9 @@ export const router = createBrowserRouter([
         path: 'manage-users',
         element: (
           <PrivateRoute>
-            <ManageUsers />
+          <AdminRoute>
+              <ManageUsers />
+          </AdminRoute>
           </PrivateRoute>
         ),
       },
@@ -121,7 +132,9 @@ export const router = createBrowserRouter([
        path:'analytics',
        element:(
         <PrivateRoute>
-          <Analytics/>
+       <AdminRoute>
+           <Analytics/>
+       </AdminRoute>
         </PrivateRoute>
        )
       },
@@ -140,6 +153,34 @@ export const router = createBrowserRouter([
              <MyApplications/>
           </PrivateRoute>
         )
+      },
+      {
+          path:"my-reviews",
+          element:(
+            <PrivateRoute>
+              <MyReviews/>
+            </PrivateRoute>
+          )
+      },
+      {
+      path:"moderator-applications",
+       element:(
+          <PrivateRoute>
+            <ModeratorRout>
+               <ManageApplications/>
+            </ModeratorRout>
+          </PrivateRoute>
+       )
+      },
+      {
+          path:"all-reviews",
+         element:(
+          <PrivateRoute>
+           <ModeratorRout>
+             <AllReviews/>
+           </ModeratorRout>
+          </PrivateRoute>
+         )
       },
       {
         path: 'my-orders',

@@ -6,7 +6,7 @@ import {MdOutlineManageHistory, MdAnalytics } from 'react-icons/md'
 const AdminMenu = () => {
   return (
     <>
-      <MenuItem icon={FaUserCog} label='Manage Users' address='manage-users' />
+     
        <MenuItem
         icon={BsFillHouseAddFill}
         label='Add Scholarship'
@@ -22,6 +22,7 @@ const AdminMenu = () => {
                     label='Analytics'
                     address='Analytics'
                   />
+                   <MenuItem icon={FaUserCog} label='Manage Users' address='manage-users' />
     </>
   )
 }
